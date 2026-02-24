@@ -115,6 +115,7 @@ class Workspace:
             
             # pre-fill the replay buffer
             if cfg.buffer.kv_path is not None:
+                print(f'--- Pre-filling the replay buffer with offline data ---')
                 num_retrieved_episodes = 0   
                 num_retrieve_iter = 0
                 while num_retrieved_episodes < cfg.buffer.num_retrieve_episodes:
@@ -149,6 +150,7 @@ class Workspace:
             self._bc_iter = None
             
             # train the bc agent on the prior buffer
+            print(f'--- Training BC agent on the prior buffer ---')
             for bc_i in tqdm(range(cfg.ws.bc_train_steps)):
                 metrics = self.bc_agent.update(next(self.bc_iter))
                 if bc_i % 1000 == 0:
@@ -276,7 +278,7 @@ class Workspace:
             if data['action'].shape[-1] != envs.TASK_ACT_DIM[env_name]:
                 continue
             # add the data to the storage
-            storage.copy_episode(data, env_name)
+            storage.copy_episode(data)
         return storage, storage._num_episodes
 
     def _setup_wandb(self):

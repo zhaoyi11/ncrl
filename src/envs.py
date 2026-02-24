@@ -439,7 +439,6 @@ def make(task_name, seed, obs_type="pixels", action_repeat=1, frame_stack=1,  wi
 def make_env(cfg, seed):
     """ Make an environment. """
     assert cfg.obs_type in ('pixels', 'state')
-
     env = make(cfg.task, seed, obs_type=cfg.obs_type, action_repeat=cfg.action_repeat, frame_stack=cfg.frame_stack,
                     width=cfg.img_size, height=cfg.img_size, reward_threshold=cfg.reward_threshold, action_penalty=cfg.action_penalty)
     return env

@@ -7,14 +7,33 @@ import torchvision
 import torch.nn.functional as F
 import faiss
 from omegaconf import OmegaConf 
-import dreamer.nets_ as nets
-# file name -- a list of strings
-data_basedir = Path('/scratch/project_462000782/icml2025_dataset/all')
-path_to_save = Path('/scratch/project_462000782/icml2025_dataset/dataset_db.npz')
-model_basedir = Path('/flash/project_462000782/cont_pretrain/checkpoints')
-# data_basedir = Path('/data/masrl/datasets/exploration')
-# path_to_save = Path('/home/zhaoy13/rl/cont_pretrain/dataset_db.npz')
-# model_basedir = Path('/home/zhaoy13/rl/cont_pretrain/logs/pretrain/dmc-walker-walk/65b97f21b0be47a9bc3427c19cebbe1a_42/snapshot_200000.pt')
+import dreamer.nets as nets
+
+# The model and data should be structured as follows:
+# data_basedir
+#   |-- dmcontrol
+#   |   |-- domain1
+#   |   |   |-- data1.npz
+#   |   |   |-- data2.npz
+#   |   |-- domain2
+#   |   |   |-- data1.npz
+#   |   |   |-- data2.npz
+#   |-- metaworld
+#   |   |-- task1
+#   |   |   |-- data1.npz
+#   |   |   |-- data2.npz
+#   |   |-- task2
+#   |   |   |-- data1.npz
+#   |   |   |-- data2.npz
+
+# The model and data should be structured as follows:
+# model_basedir
+#   |-- dmcontrol.pt
+#   |-- metaworld.pt
+
+model_basedir = Path('/data/mpt_models')
+data_basedir = Path('/data/ncrl_datasets')
+path_to_save = Path('/home/zhaoy13/rl/ncrl/dataset_db.npz')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -40,7 +59,7 @@ for benchmark in ['dmcontrol', 'metaworld']:
         model_path = model_basedir / f'{benchmark}.pt'
     else:
         model_path = model_basedir
-    param_dict = torch.load(model_basedir)
+    param_dict = torch.load(model_path, weights_only=False)
     encoder.load_state_dict(param_dict['wm']['encoder'])
     encoder.to(device)
     encoder.eval()
@@ -58,7 +77,7 @@ for benchmark in ['dmcontrol', 'metaworld']:
     first_frames = first_frames.to(device)
     with torch.no_grad():
         for i in range(0, first_frames.size(0), 100):
-            feat = encoder(first_frames[i:i+100])
+            feat = encoder(first_frames[i:i+100]) # preprocess 100 frames at a time to save memory
             feat = feat.cpu().numpy()
             if i == 0:
                 feats = feat

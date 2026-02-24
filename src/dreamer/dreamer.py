@@ -155,7 +155,7 @@ class DreamerAgent(Module):
 
   def load(self, path, load_model_dict=None):
     """ Load models' parameters from a checkpoint."""
-    params_dict = torch.load(path)
+    params_dict = torch.load(path, weights_only=False)
     
     if load_model_dict is None or sum(load_model_dict.values()) == 0:
       print("No model to load.")
