@@ -1,0 +1,88 @@
+ws:
+  run_id: ???
+  work_basedir: null # if null, use current working directory
+  project_name: ncrl-pretrain
+  experiment: pretrain
+  device: cuda
+  seed: 42 
+  mode: pretrain # [scratch, pretrain, finetune]
+
+  use_action_padding: true
+  
+  # for pretraining
+  num_pretrain_steps: 200_000
+  batch_size: 32
+  chunk_length: 64
+
+  use_wandb: true
+  wandb_entity: yi-zhao-aalto # TODO: change to your wandb entity
+  log_every_steps: 5_000
+  recon_every_steps: 10_000 # log reconstructed trajectories
+  save_every_steps: 10_000
+
+env:
+  task: dmc-quadruped-walk
+  obs_type: pixels
+  frame_stack: 1
+  img_size: 64
+  action_repeat: 2
+  # for hard tasks, not used during pre-training
+  reward_threshold: 0.6
+  action_penalty: 0.1
+
+snapshot:
+  save_snapshot: true
+  save_every_steps: ${ws.save_every_steps}
+  models_to_load: {wm: true, actor: false, critic: false}
+  load_path: null
+
+buffer:
+  capacity: 1_000_000_000 # maximal env steps after action repeat
+  ongoing: false
+  prioritize_ends: false
+  num_workers: 0
+  batch_size: ${ws.batch_size} 
+  chunk_length: ${ws.chunk_length}
+  use_action_padding: ${ws.use_action_padding}
+  save_buffer: true
+  # offline dataset
+  offline_path: null
+  kv_path: null
+  num_retrieve_episodes: 500
+
+agent:
+  mode: ${ws.mode}
+  use_ots_reward: false
+  use_action_padding: ${ws.use_action_padding}
+  # World Model
+  rssm:
+    deter: 12288
+    hidden: 1536
+    stoch: 32
+    classes: 96
+    act: SiLU
+    unimix: 0.01
+    blocks: 8
+    free_nats: 1.0
+  encoder: 
+    cnn_depth: 96
+    use_norm: true
+    cnn_kernels: [4, 4, 4, 4]
+    act: SiLU
+  decoder:
+    units: ${agent.rssm.hidden}
+    cnn_depth: ${agent.encoder.cnn_depth}
+    use_norm: true
+    cnn_kernels: [5, 5, 6, 6]
+    act: SiLU 
+    num_block: ${agent.rssm.blocks} 
+  loss_scales: {recon: 1.0, dyn_loss: 1.0, repr_loss: 0.1}
+  model_opt: {opt: adam, lr: 1e-4, eps: 1e-5, clip: 100, wd: 1e-6}
+
+  precision: 16
+run_suffix: 0
+# ref: https://stackoverflow.com/questions/65104134/disable-file-output-of-hydra
+hydra:  
+    output_subdir: null  
+    run:  
+        dir: .

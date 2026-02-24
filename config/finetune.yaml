@@ -1,0 +1,145 @@
+ws:
+  run_id: ???
+  work_basedir: null # if null, use current working directory
+  project_name: ncrl-finetune
+  experiment: finetune
+  device: cuda
+  seed: -1 # random sample a seed if ==-1
+  mode: finetune # [scratch, pretrain, finetune]
+
+  use_action_padding: true # use action padding if the pre-trained world model is trained with action padding (for multiple domains)
+
+  # train
+  num_train_frames: 500_000
+  warmup_frames: 15_000
+
+  train_ratio: 256 # (batch_size * chunk_length) / train_ratio = update_every_step
+  batch_size: 16
+  chunk_length: 64
+
+  # bc training
+  use_bc: False # whether to use policy prior trained with behavior cloning
+  bc_train_steps: 150_000
+  bc_batch_size: 256
+  jsrl_schedule: linear(1, 0.1, 100_000) # schedule for jsrl
+
+  # eval
+  eval_every_frames: 10_000
+  num_eval_episodes: 5
+  # log
+  save_video: true 
+  use_wandb: true # whether to use wandb for logging
+  wandb_entity: yi-zhao-aalto # TODO: change to your wandb entity
+  recon_every_frames: 50_000 # log reconstructed trajectories
+
+bc_buffer:
+  capacity: 1_000_000
+  batch_size: ${ws.bc_batch_size}
+  chunk_length: 4
+  use_action_padding: ${ws.use_action_padding}
+  save_buffer: true
+  num_workers: 4
+
+env:
+  task: dmc-quadruped-walk
+  obs_type: pixels
+  frame_stack: 1
+  img_size: 64
+  action_repeat: 2
+  # for hard version tasks
+  reward_threshold: 0.6
+  action_penalty: 0.1
+
+snapshot:
+  save_snapshot: true
+  save_every_frames: 100_000
+  models_to_load: {wm: true, actor: false, critic: false}
+  load_path: null
+  bc_load_path: null
+
+buffer:
+  capacity: 1_000_000
+  ongoing: false
+  prioritize_ends: false
+  num_workers: 0
+  batch_size: ${ws.batch_size} 
+  chunk_length: ${ws.chunk_length}
+  use_action_padding: ${ws.use_action_padding}
+  save_buffer: false
+  # offline dataset
+  online_ratio: 1.0 
+  offline_path: null
+  # retrieve buffer
+  kv_path: null
+  num_retrieve_episodes: 500
+
+agent:
+  mode: ${ws.mode}
+  use_action_padding: ${ws.use_action_padding}
+  rssm:
+    deter: 1024
+    hidden: 512
+    stoch: 32
+    classes: 32
+    act: SiLU
+    unimix: 0.01
+    blocks: 8
+    free_nats: 1.0
+  encoder: 
+    cnn_depth: 32
+    use_norm: true
+    cnn_kernels: [4, 4, 4, 4]
+    act: SiLU
+  decoder: 
+    units: ${agent.rssm.hidden}
+    cnn_depth: ${agent.encoder.cnn_depth}
+    use_norm: true
+    cnn_kernels: [5, 5, 6, 6]
+    act: SiLU 
+    num_block: ${agent.rssm.blocks} 
+  loss_scales: {recon: 1.0, dyn_loss: 1.0, repr_loss: 0.1}
+  model_opt: {opt: adam, lr: 1e-4, eps: 1e-5, clip: 100, wd: 1e-6}
+  clip_rewards: identity
+  reward: 
+    layers: 2
+    units: 512
+    act: SiLU
+    use_norm: true
+    blocks: ${agent.rssm.blocks}
+  # Actor Critic
+  actor: 
+    layers: 3
+    units: ${agent.reward.units}
+    act: SiLU
+    use_norm: true
+    blocks: ${agent.rssm.blocks}
+    policy_dist: truncated_normal
+    use_action_padding: ${ws.use_action_padding}
+  critic: 
+    layers: 3 
+    units: ${agent.reward.units}
+    act: SiLU
+    use_norm: true
+    blocks: ${agent.rssm.blocks}
+  actor_opt: {opt: adam, lr: 8e-5, eps: 1e-5, clip: 100, wd: 1e-6}
+  critic_opt: {opt: adam, lr: 8e-5, eps: 1e-5, clip: 100, wd: 1e-6}
+  discount: 0.99
+  discount_lambda: 0.95
+  actor_ent: 1e-4
+  slow_target: True
+  slow_target_update: 1
+  slow_target_fraction: 0.02
+  slow_baseline: True
+  actor_grad: dynamics #reinforce #!!! to use reinforce, set actor.policy_dist to normal
+  reward_norm: {momentum: 1.0, scale: 1.0, eps: 1e-8} 
+  imag_horizon: 16
+
+  precision: 32 # use float32 or float16
+  eval_state_mean: False
+
+run_suffix: 0
+# ref: https://stackoverflow.com/questions/65104134/disable-file-output-of-hydra
+hydra:  
+    output_subdir: null  
+    run:  
+        dir: .
