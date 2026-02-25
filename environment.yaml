@@ -1,0 +1,42 @@
+name: ncrl_env
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+dependencies:
+    - python=3.10
+    - mesalib
+    - ffmpeg
+    - pytorch
+    - torchvision
+    - PyOpenGL_accelerate
+    - pip
+    - pip:
+      - git+https://github.com/zhaoyi11/Metaworld.git@fix_render # for metaworld environment
+      - faiss-cpu
+      - hydra-core
+      - gym
+      - dm-control>=1.0.15
+      - dm-env
+      - dm-env-wrappers>=0.0.11
+      - mujoco>=3.0.1
+      - mujoco-utils>=0.0.6
+      - scikit-learn
+      - tqdm
+      - absl-py
+      - pytest-xdist
+      - black
+      - ruff
+      - mypy
+      - wandb
+      - moviepy==1.0.3
+      - imageio
+      - termcolor
+      - ipdb
+      - matplotlib
+      - seaborn
+      - opencv-python
+      - pandas
+      - tensordict
+      - einops
+      - decorator==4.0.2

@@ -15,7 +15,7 @@ ws:
   chunk_length: 64
 
   use_wandb: true
-  wandb_entity: yi-zhao-aalto # TODO: change to your wandb entity
+  wandb_entity: ???
   log_every_steps: 5_000
   recon_every_steps: 10_000 # log reconstructed trajectories
   save_every_steps: 10_000
