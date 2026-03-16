@@ -14,31 +14,44 @@ conda activate ncrl_env
 Models and datasets used in the paper are hosted on Hugging Face https://huggingface.co/datasets/zhaoyi11/ncrl.
 After downloading: a) unzip the files, and b) move the models and datasets to `<Model_Path>` and `<Data_Path>` respectively.
 
+The model and dataset should have the following structure:
+```bash
+/<Base-Path>/ncrl/models (<Model_Path>)
+      |- dmcontrol.pt
+      |- metaworld.pt
+
+/<Base-Path>/ncrl/ncrl_datasets (<Data_Path>)
+      |- dmcontrol
+      |- metaworld	
+```
+
 ---
 ### Training Pipeline
-1. Build the dataset database:
-```python
-python3 src/prepare_dataset_kv.py \
-        --model-basedir <Model_Path> \
-        --data-basedir <Data_Path> \
-        --path-to-save <Database_Path>/dataset_db.npz
-```
-
-2. (Optional) World model pre-training
+1. (Optional) World model pre-training
 Edit `DATASETS_PATH` in `scripts/pretrain.sh` to `<Data_Path>`, then run:
-```bash
-./scripts/pretrain.sh
-```
+    ```bash
+    ./scripts/pretrain.sh
+    ```
+
+2. Build the dataset database (~10 min with RXT4090):
+    ```python
+    python3 src/prepare_dataset_kv.py \
+            --model-basedir <Model_Path> \
+            --data-basedir <Data_Path> \
+            --path-to-save <Database_Path>/dataset_db.npz
+    ```
 
 3. Task-specific fine-tuning
+The training was conducted on AMD MI250x GPUs with 128G memory. If you encounter an OOM issue, try reducing the `ws.batch_size` and `ws.chunk_length`.
 Edit the following fields in `scripts/finetune.sh`
-    - `SNAPSHOT_BASEDIR` → `<Model_Path>` (or your pretrained world model in step 2)
+    - `SNAPSHOT_BASEDIR` → `<Model_Path>` (or your pre-trained world model in step 2)
     - `DATA_DB_PATH` → `<Database_Path>/dataset_db.npz`
     - `ENV` → Training env name (see `src/envs.py` for the full list)
 Then run:
-```bash
-./scripts/finetune.sh
-```
+    ```bash
+    ./scripts/finetune.sh
+    ```
+
 ---
 ### BibTeX
 If you find this repository useful for your research, please consider citing:

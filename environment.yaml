@@ -9,7 +9,6 @@ dependencies:
     - ffmpeg
     - pytorch
     - torchvision
-    - PyOpenGL_accelerate
     - pip
     - pip:
       - git+https://github.com/zhaoyi11/Metaworld.git@fix_render # for metaworld environment

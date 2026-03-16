@@ -73,6 +73,7 @@ def main(model_basedir: Path, data_basedir: Path, path_to_save: Path) -> None:
     db_to_save = {}
 
     for benchmark in ['dmcontrol', 'metaworld']:
+        print(f'Processing {benchmark}...')
         data_path = data_basedir / benchmark
         filename = list(data_path.rglob('*.npz'))
 
@@ -81,6 +82,7 @@ def main(model_basedir: Path, data_basedir: Path, path_to_save: Path) -> None:
             model_path = model_basedir / f'{benchmark}.pt'
         else:
             model_path = model_basedir
+        print(f'Loading model from {model_path}...')
         param_dict = torch.load(model_path, weights_only=False)
         encoder.load_state_dict(param_dict['wm']['encoder'])
         encoder.to(device)
